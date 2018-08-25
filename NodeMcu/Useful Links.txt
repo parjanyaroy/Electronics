@@ -1,0 +1,9 @@
+Useful Links
+https://techtutorialsx.com/2016/07/21/esp8266-post-requests/
+https://techtutorialsx.com/2016/07/17/esp8266-http-get-requests/
+https://github.com/tzapu/WiFiManager#debug
+https://www.c-sharpcorner.com/article/reading-input-from-serial-monitor-in-arduino/
+http://www.electronicwings.com/nodemcu/http-client-on-nodemcu-with-arduino-ide
+http://www.manelsoft.com/projects/nodemcu_sfdc_temperature_service.aspx
+https://techtutorialsx.com/2016/07/17/esp8266-http-get-requests/
+https://github.com/afnid/espsim
