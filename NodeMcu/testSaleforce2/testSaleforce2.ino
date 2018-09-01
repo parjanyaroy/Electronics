@@ -3,7 +3,7 @@
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
 
-boolean isSetupDebug=false;
+boolean isSetupDebug=true;
 boolean isResetWifiSettings=false;
 
 // -------------------------------- TIME ZONE AUTHENTICATION DATA --------------------------------------------//
@@ -16,7 +16,7 @@ StaticJsonBuffer<1024> json_buf;
 
 
 // -------------------------------- SALESFORCE SERVER DATA --------------------------------------------//
-char servername[] = "homeautomationalpha-developer-edition.ap4.force.com";            // remote server we will connect to
+//String servername = "homeautomationalpha-developer-edition.ap4.force.com";            // remote server we will connect to
 // -------------------------------- SALESFORCE SERVER DATA --------------------------------------------//
 
 // -------------------------------- AUTO CONNECT MANAGER DATA --------------------------------------------//
@@ -28,12 +28,13 @@ char AccessPointPassword[] = "Home@1234";
 String result;
 
 // -------------------------------- AUTO CONNECT DEVICE ID DATA--------------------------------------------//
-String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?";
-String DeviceId="12312312312312312312"; // Should be restricted to 20 characters and Numeric
+String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=";
+String DeviceId="82542347168123446895"; // Should be restricted to 20 characters and Numeric
 char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94";
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 void setup()
 {
+  if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
   Serial.begin(115200);
   if(isSetupDebug==true){Serial.println("[LOC] Connecting to Wifi");}
   WiFiManager wifiManager;
@@ -58,6 +59,7 @@ boolean ConnectToCloud()
   HTTPClient http;
   char payload[400];
   char requestURL[100];
+  char requestURLSF[150];
   String request=dateApiName+apiKey+zonePefix+zone;
   request.toCharArray(requestURL,request.length()+1);
   http.begin(requestURL);
@@ -75,7 +77,7 @@ boolean ConnectToCloud()
   http.end();
 
   if(isSetupDebug==true){Serial.printf("[LOC] Date Time Data %s \n",payload);}
-  String dataToken=null;
+  String dataToken="";
  JsonObject &root = json_buf.parseObject(payload);
   if (!root.success()) {
     if(isSetupDebug==true){Serial.println("[LOC] Parse time data failed");}
@@ -86,7 +88,7 @@ boolean ConnectToCloud()
   String timestamp= root["timestamp"];
   if(isSetupDebug==true){Serial.println("[LOC] Retrieved Timestamp "+timestamp);}
   // Logic to generate the master token
-  String dataToken = DeviceId+timestamp;
+  String dataToken = DeviceId+timestamp;// First 20 characters will be the device Id , remaining will be the timestamp
   dataToken.replace("0","s");
   dataToken.replace("1","u");
   dataToken.replace("2","c");
@@ -97,10 +99,13 @@ boolean ConnectToCloud()
   dataToken.replace("7","r");
   dataToken.replace("8","p");
   dataToken.replace("9","l");
-  }
-  
+  if(isSetupDebug==true){Serial.print("[LOC] Datatoken \n"+dataToken);}
   if(isSetupDebug==true){Serial.print("[LOC] Connecting To Server \n");}
-  http.begin("https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=1231231231242312312", "D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94");
+  server=server+dataToken;
+  server.toCharArray(requestURLSF,server.length()+1);
+  //http.begin("https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=1231231231242312312", "D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94");
+  if(isSetupDebug==true){Serial.printf("[LOC] Request URL  : %s\n", requestURLSF);}
+  http.begin(requestURLSF,shaFingerPrint);
   int httpCode = http.GET();
   if (httpCode > 0) {
     if(isSetupDebug==true){Serial.printf("[LOC] Connection To Server Successful : %d\n", httpCode);}
@@ -116,11 +121,20 @@ boolean ConnectToCloud()
   if(isSetupDebug==true){Serial.println("[LOC] ConnectToCloud Successful");}
   delay(1000);
   return true;
+  }
 }
-
+int cnt=10;
 void loop() {
-  Serial.println("hi");
-  delay(90000);
+  Serial.println("Rebooting in 10 seconds");
+   Serial.println(cnt);
+ 
+  if(cnt==0){
+    Serial.println("Reset..");
+    ESP.restart();
+  }
+ 
+  cnt--;
+  delay(1000);
 }
 
 
