@@ -26,8 +26,8 @@ void setup() {
   pinMode(output5, OUTPUT); // For Two Outputs : Relay input 1
   pinMode(output4, OUTPUT); // For Two Outputs : Relay input 2
   // Set outputs to LOW
-  digitalWrite(output5, LOW);
-  digitalWrite(output4, LOW);
+  digitalWrite(output5, HIGH);
+  digitalWrite(output4, HIGH);
 
   // WiFiManager Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
