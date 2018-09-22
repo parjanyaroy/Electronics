@@ -21,7 +21,9 @@ void setup() {
  
 void loop(){
   sensorValue = analogRead(sensorPin); // read the value from the sensor
-  if(sensorValue<5)
+  Serial.print("sensorValue ");
+  Serial.print(sensorValue);
+  if(sensorValue<250)
   {
     Serial.println("1.  Room Light Off!!");
     delay(1000);
@@ -30,13 +32,13 @@ void loop(){
     {
       Serial.println("2.  Movement Found Turning On Lamp");
       digitalWrite(ledPin, HIGH); // turn LED ON
-        while(counter<10 && analogRead(sensorPin)<5)
+        while(counter<60 && analogRead(sensorPin)<250)
         {
         val = digitalRead(inputPin);
         if(val==LOW)
         {
           counter++;
-          Serial.println("3.  No Motion.Incrementing Counter To ");
+          //Serial.println("3.  No Motion.Incrementing Counter To ");
           Serial.println(counter);
         }
         else
@@ -60,7 +62,7 @@ void loop(){
   {
     Serial.println("1.  Room Light On!!");
     digitalWrite(ledPin, LOW); // turn LED OFF
-    delay(10000);
+    delay(5000);
   }
   
 }
