@@ -25,7 +25,7 @@ char AccessPointPassword[] = "Home@1234";
 // -------------------------------- AUTO CONNECT MANAGER DATA --------------------------------------------//
 
 
-String result;
+String result; 
 
 // -------------------------------- AUTO CONNECT DEVICE ID DATA--------------------------------------------//
 String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=";
@@ -34,7 +34,7 @@ char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 
 
-WiFiServer DeviceServer(80);
+WiFiServer DeviceServer(81);
 
 // Variable to store the HTTP request
 String header;
@@ -42,14 +42,28 @@ String header;
 // Auxiliar variables to store the current output state
 String output5State = "off";
 String output4State = "off";
+String output0State = "off";
+String output2State = "off";
 
 // Assign output variables to GPIO pins
 const int output5 = 5;
 const int output4 = 4;
+const int output0 = 0;
+const int output2 = 2;
+const int output_Boot = 16;
+const int output_Loop = 14;
+const int output_ServerHit = 12;
 
 
 void setup()
 {
+  
+  pinMode(output_Boot, OUTPUT);
+  pinMode(output_Loop, OUTPUT);
+  pinMode(output_ServerHit, OUTPUT);
+  digitalWrite(output_Boot, HIGH);
+  digitalWrite(output_Loop, LOW);
+  digitalWrite(output_ServerHit, LOW);
   if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
   Serial.begin(115200);
   if(isSetupDebug==true){Serial.println("[LOC] Connecting to Wifi");}
@@ -68,12 +82,17 @@ void setup()
   delay(1000); 
    authenticated= ConnectToCloud();
   }
-   pinMode(output5, OUTPUT); // For Two Outputs : Relay input 1
+  pinMode(output5, OUTPUT); // For Two Outputs : Relay input 1
   pinMode(output4, OUTPUT); // For Two Outputs : Relay input 2
+  pinMode(output0, OUTPUT); // For Two Outputs : Relay input 1
+  pinMode(output2, OUTPUT); // For Two Outputs : Relay input 2
   // Set outputs to LOW
   digitalWrite(output5, HIGH);
   digitalWrite(output4, HIGH);
+  digitalWrite(output0, HIGH);
+  digitalWrite(output2, HIGH);
   DeviceServer.begin();
+  digitalWrite(output_Boot, LOW);
 }
 
 boolean ConnectToCloud()
@@ -150,8 +169,10 @@ void loop() {
 
   
  WiFiClient client = DeviceServer.available();   // Listen for incoming clients
-
+digitalWrite(output_Loop, HIGH);
   if (client) {                             // If a new client connects,
+    digitalWrite(output_Loop, LOW);
+    digitalWrite(output_ServerHit, HIGH);
     Serial.println("New Client.");          // print a message out in the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) {            // loop while the client's connected
@@ -187,8 +208,23 @@ void loop() {
               Serial.println("GPIO 4 off");
               output4State = "off";
               digitalWrite(output4, HIGH);
-            }
-
+            } else if (header.indexOf("GET /0/on") >= 0) {
+              Serial.println("GPIO 0 on");
+              output0State = "on";
+              digitalWrite(output0, LOW);
+            } else if (header.indexOf("GET /0/off") >= 0) {
+              Serial.println("GPIO 0 off");
+              output0State = "off";
+              digitalWrite(output0, HIGH);
+      } else if (header.indexOf("GET /2/on") >= 0) {
+              Serial.println("GPIO 2 on");
+              output2State = "on";
+              digitalWrite(output2, LOW);
+            } else if (header.indexOf("GET /2/off") >= 0) {
+              Serial.println("GPIO 2 off");
+              output2State = "off";
+              digitalWrite(output2, HIGH);
+      }
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -220,6 +256,24 @@ void loop() {
             } else {
               client.println("<p><a href=\"/4/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
+      
+      // Display current state, and ON/OFF buttons for GPIO 0
+            client.println("<p>GPIO 0 - State " + output0State + "</p>");
+            // If the output0State is off, it displays the ON button
+            if (output0State == "off") {
+              client.println("<p><a href=\"/0/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/0/off\"><button class=\"button button2\">OFF</button></a></p>");
+            }
+      
+      // Display current state, and ON/OFF buttons for GPIO 2
+            client.println("<p>GPIO 2 - State " + output2State + "</p>");
+            // If the output2State is off, it displays the ON button
+            if (output2State == "off") {
+              client.println("<p><a href=\"/2/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/2/off\"><button class=\"button button2\">OFF</button></a></p>");
+            }
             client.println("</body></html>");
 
             // The HTTP response ends with another blank line
@@ -240,6 +294,7 @@ void loop() {
     client.stop();
     Serial.println("Client disconnected.");
     Serial.println("");
+    digitalWrite(output_ServerHit, LOW);
   }
 }
 
