@@ -34,7 +34,7 @@ char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 
 
-WiFiServer DeviceServer(81);
+WiFiServer DeviceServer(80);
 
 // Variable to store the HTTP request
 String header;
@@ -187,44 +187,58 @@ digitalWrite(output_Loop, HIGH);
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // and a content-type so the client knows what's coming, then a blank line:
             client.println("HTTP/1.1 200 OK");
+            client.println("SampleKey:SampleValue");
             client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
+            
 
             // turns the GPIOs on and off
             if (header.indexOf("GET /5/on") >= 0) {
               Serial.println("GPIO 5 on");
               output5State = "on";
               digitalWrite(output5, LOW);
+              client.println("SW1:on");
             } else if (header.indexOf("GET /5/off") >= 0) {
               Serial.println("GPIO 5 off");
               output5State = "off";
               digitalWrite(output5, HIGH);
+              client.println("SW1:off");
             } else if (header.indexOf("GET /4/on") >= 0) {
               Serial.println("GPIO 4 on");
               output4State = "on";
               digitalWrite(output4, LOW);
+              client.println("SW2:on");
             } else if (header.indexOf("GET /4/off") >= 0) {
               Serial.println("GPIO 4 off");
               output4State = "off";
               digitalWrite(output4, HIGH);
+              client.println("SW2:off");
             } else if (header.indexOf("GET /0/on") >= 0) {
               Serial.println("GPIO 0 on");
               output0State = "on";
               digitalWrite(output0, LOW);
+              client.println("SW3:on");
             } else if (header.indexOf("GET /0/off") >= 0) {
               Serial.println("GPIO 0 off");
               output0State = "off";
               digitalWrite(output0, HIGH);
+              client.println("SW3:off");
       } else if (header.indexOf("GET /2/on") >= 0) {
               Serial.println("GPIO 2 on");
               output2State = "on";
               digitalWrite(output2, LOW);
+              client.println("SW4:on");
             } else if (header.indexOf("GET /2/off") >= 0) {
               Serial.println("GPIO 2 off");
               output2State = "off";
               digitalWrite(output2, HIGH);
+              client.println("SW4:off");
+      } else if (header.indexOf("GET /restart") >= 0) {
+              Serial.println("Resetting ESP");
+              client.println("Reset:true");
+              ESP.restart(); //ESP.reset();
       }
+            client.println("Connection: close");
+            client.println();
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -232,9 +246,10 @@ digitalWrite(output_Loop, HIGH);
             // CSS to style the on/off buttons
             // Feel free to change the background-color and font-size attributes to fit your preferences
             client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-            client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;");
+            client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;border-radius: 8px;box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);");
             client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-            client.println(".button2 {background-color: #77878A;}</style></head>");
+            client.println(".button2 {background-color: #77878A;border-radius: 8px;box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);}");
+            client.println(".button3 {background-color: #008CBA;border-radius: 8px;box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);}</style></head>");
 
             // Web Page Heading
             client.println("<body><h1>Cloud Socket (Alpha Stage)</h1>");
@@ -274,6 +289,7 @@ digitalWrite(output_Loop, HIGH);
             } else {
               client.println("<p><a href=\"/2/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
+            client.println("<p><a href=\"/restart\"><button class=\"button button3\">Restart</button></a></p>");
             client.println("</body></html>");
 
             // The HTTP response ends with another blank line
