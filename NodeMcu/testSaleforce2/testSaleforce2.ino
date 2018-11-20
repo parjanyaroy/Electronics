@@ -1,9 +1,14 @@
+#define BLYNK_PRINT Serial
+
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
 #include <string.h>
 
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
 boolean isSetupDebug=true;
 boolean isResetWifiSettings=false;
 
@@ -37,7 +42,7 @@ char shaFingerPrint[]="08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 
 
-WiFiServer DeviceServer(81);
+WiFiServer DeviceServer(1025);
 
 // Variable to store the HTTP request
 String header;
@@ -56,6 +61,7 @@ const int output2 = 2;
 const int output_Boot = 16;
 const int output_Loop = 14;
 const int output_ServerHit = 12;
+char auth[] = "38640884a51245c8ad6ec9f0dcd44c8f";
 
 
 void setup()
@@ -78,7 +84,7 @@ void setup()
   digitalWrite(output2, HIGH);// Set outputs to LOW
   
   if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
-  Serial.begin(115200);
+  Serial.begin(9600);
   if(isSetupDebug==true){Serial.println("[LOC] Connecting to Wifi");}
   WiFiManager wifiManager;
   if(isResetWifiSettings){wifiManager.resetSettings();}
@@ -95,8 +101,9 @@ void setup()
   delay(1000); 
    authenticated= ConnectToCloud();
   }
-  DeviceServer.begin();
+  //DeviceServer.begin();
   digitalWrite(output_Boot, LOW);
+  Blynk.begin("38640884a51245c8ad6ec9f0dcd44c8f", "parjanya", "fireandblood");
 }
 
 boolean ConnectToCloud()
@@ -201,8 +208,9 @@ boolean ConnectToCloud()
 }
 
 void loop() {
-
-  
+  digitalWrite(output_Loop, HIGH);
+  Blynk.run();
+  /*
  WiFiClient client = DeviceServer.available();   // Listen for incoming clients
 digitalWrite(output_Loop, HIGH);
   if (client) {                             // If a new client connects,
@@ -349,7 +357,7 @@ digitalWrite(output_Loop, HIGH);
     Serial.println("Client disconnected.");
     Serial.println("");
     digitalWrite(output_ServerHit, LOW);
-  }
+  }*/
 }
 
 
