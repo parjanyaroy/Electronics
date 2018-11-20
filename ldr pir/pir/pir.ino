@@ -16,7 +16,7 @@ void setup() {
   pinMode(inputPin, INPUT);     // declare sensor as input
   Serial.println("Hi!");
   Serial.begin(9600);
-  digitalWrite(ledPin, LOW); // turn LED OFF
+  digitalWrite(ledPin, HIGH); // turn LED OFF
 }
  
 void loop(){
@@ -31,8 +31,8 @@ void loop(){
     if(val==HIGH)
     {
       Serial.println("2.  Movement Found Turning On Lamp");
-      digitalWrite(ledPin, HIGH); // turn LED ON
-        while(counter<60 && analogRead(sensorPin)<250)
+      digitalWrite(ledPin, LOW); // turn LED ON
+        while(counter<600 && analogRead(sensorPin)<250)
         {
         val = digitalRead(inputPin);
         if(val==LOW)
@@ -55,13 +55,13 @@ void loop(){
     else
     {
       delay(1000);
-      digitalWrite(ledPin, LOW);
+      digitalWrite(ledPin, HIGH);
     }
   }
   else
   {
     Serial.println("1.  Room Light On!!");
-    digitalWrite(ledPin, LOW); // turn LED OFF
+    digitalWrite(ledPin, HIGH); // turn LED OFF
     delay(5000);
   }
   

@@ -2,6 +2,7 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
+#include <string.h>
 
 boolean isSetupDebug=true;
 boolean isResetWifiSettings=false;
@@ -28,13 +29,15 @@ char AccessPointPassword[] = "Home@1234";
 String result; 
 
 // -------------------------------- AUTO CONNECT DEVICE ID DATA--------------------------------------------//
-String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=";
+//String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=";
+String server = "https://young-meadow-12866.herokuapp.com/iotservice?DeviceId=";
 String DeviceId="82542347168123446895"; // Should be restricted to 20 characters and Numeric
-char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94";
+//char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94";
+char shaFingerPrint[]="08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30";
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 
 
-WiFiServer DeviceServer(80);
+WiFiServer DeviceServer(81);
 
 // Variable to store the HTTP request
 String header;
@@ -64,6 +67,16 @@ void setup()
   digitalWrite(output_Boot, HIGH);
   digitalWrite(output_Loop, LOW);
   digitalWrite(output_ServerHit, LOW);
+  
+  pinMode(output5, OUTPUT); // For Two Outputs : Relay input 1
+  pinMode(output4, OUTPUT); // For Two Outputs : Relay input 2
+  pinMode(output0, OUTPUT); // For Two Outputs : Relay input 3
+  pinMode(output2, OUTPUT); // For Two Outputs : Relay input 4
+  digitalWrite(output5, HIGH);// Set outputs to LOW
+  digitalWrite(output4, HIGH);// Set outputs to LOW
+  digitalWrite(output0, HIGH);// Set outputs to LOW
+  digitalWrite(output2, HIGH);// Set outputs to LOW
+  
   if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
   Serial.begin(115200);
   if(isSetupDebug==true){Serial.println("[LOC] Connecting to Wifi");}
@@ -82,15 +95,6 @@ void setup()
   delay(1000); 
    authenticated= ConnectToCloud();
   }
-  pinMode(output5, OUTPUT); // For Two Outputs : Relay input 1
-  pinMode(output4, OUTPUT); // For Two Outputs : Relay input 2
-  pinMode(output0, OUTPUT); // For Two Outputs : Relay input 1
-  pinMode(output2, OUTPUT); // For Two Outputs : Relay input 2
-  // Set outputs to LOW
-  digitalWrite(output5, HIGH);
-  digitalWrite(output4, HIGH);
-  digitalWrite(output0, HIGH);
-  digitalWrite(output2, HIGH);
   DeviceServer.begin();
   digitalWrite(output_Boot, LOW);
 }
@@ -144,15 +148,46 @@ boolean ConnectToCloud()
   if(isSetupDebug==true){Serial.print("[LOC] Connecting To Server \n");}
   server=server+dataToken;
   server.toCharArray(requestURLSF,server.length()+1);
-  //http.begin("https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=1231231231242312312", "D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94");
   if(isSetupDebug==true){Serial.printf("[LOC] Request URL  : %s\n", requestURLSF);}
   http.begin(requestURLSF,shaFingerPrint);
   int httpCode = http.GET();
   if (httpCode > 0) {
     if(isSetupDebug==true){Serial.printf("[LOC] Connection To Server Successful : %d\n", httpCode);}
     if (httpCode == HTTP_CODE_OK) {
-      String payload = http.getString();
-      if(isSetupDebug==true){Serial.println("[LOC] "+payload);}
+      String payloadString = http.getString();
+    payloadString.toCharArray(payload, payloadString.length() + 1);
+    const char s[2] = ":";
+     char *token;
+   
+   /* get the first token */
+   token = strtok(payload, s);
+   int i=0;
+   /* walk through other tokens */
+   while( token != NULL ) {
+   if(i==1)
+  {
+  if(isSetupDebug==true){Serial.printf("[LOC] Switch 1: %s\n",token);}
+  digitalWrite( output5,(strcmp(token,"POWER ON")==0?LOW:HIGH));
+  }
+   else if(i==2)
+   {
+  if(isSetupDebug==true){Serial.printf("[LOC] Switch 2: %s\n",token);}     
+  digitalWrite( output4,(strcmp(token,"POWER ON")==0?LOW:HIGH));
+   }
+   else if(i==3)
+   {
+  if(isSetupDebug==true){Serial.printf("[LOC] Switch 3: %s\n",token);}
+  digitalWrite( output0,(strcmp(token,"POWER ON")==0?LOW:HIGH));     
+   }
+   else if(i==4)
+   {
+  if(isSetupDebug==true){Serial.printf("[LOC] Switch 4: %s\n",token);}  
+  digitalWrite( output2,(strcmp(token,"POWER ON")==0?LOW:HIGH));
+   }
+   i++;
+   token = strtok(NULL, s);
+   }
+      
     }
   } else {
     if(isSetupDebug==true){Serial.printf("[LOC] Failed to connect to server, error: %s\n", http.errorToString(httpCode).c_str());}
@@ -222,7 +257,7 @@ digitalWrite(output_Loop, HIGH);
               output0State = "off";
               digitalWrite(output0, HIGH);
               client.println("SW3:off");
-      } else if (header.indexOf("GET /2/on") >= 0) {
+            } else if (header.indexOf("GET /2/on") >= 0) {
               Serial.println("GPIO 2 on");
               output2State = "on";
               digitalWrite(output2, LOW);
@@ -232,11 +267,14 @@ digitalWrite(output_Loop, HIGH);
               output2State = "off";
               digitalWrite(output2, HIGH);
               client.println("SW4:off");
-      } else if (header.indexOf("GET /restart") >= 0) {
+            } else if (header.indexOf("GET /restart") >= 0) {
               Serial.println("Resetting ESP");
               client.println("Reset:true");
               ESP.restart(); //ESP.reset();
-      }
+            } else
+            {
+              break ;
+            }
             client.println("Connection: close");
             client.println();
             // Display the HTML web page
