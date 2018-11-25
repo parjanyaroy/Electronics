@@ -10,7 +10,7 @@
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 boolean isSetupDebug=true;
-boolean isResetWifiSettings=false;
+boolean isResetWifiSettings=true;
 
 // -------------------------------- TIME ZONE AUTHENTICATION DATA --------------------------------------------//
 String dateApiName = "http://api.timezonedb.com/v2/get-time-zone?key=";
