@@ -9,6 +9,9 @@
 
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+
+
+
 boolean isSetupDebug=true;
 boolean isResetWifiSettings=true;
 
@@ -34,11 +37,12 @@ char AccessPointPassword[] = "Home@1234";
 String result; 
 
 // -------------------------------- AUTO CONNECT DEVICE ID DATA--------------------------------------------//
-//String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId=";
-String server = "https://young-meadow-12866.herokuapp.com/iotservice?DeviceId=";
+String server = "https://homeautomationalpha-developer-edition.ap5.force.com/services/apexrest/iotservice?DeviceId="; //DIRECT SFDC CONNECT
+//String server = "https://young-meadow-12866.herokuapp.com/iotservice?DeviceId="; // HEROKU CONNECT
 String DeviceId="82542347168123446895"; // Should be restricted to 20 characters and Numeric
-//char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94";
-char shaFingerPrint[]="08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30";
+char shaFingerPrint[]="D1 A3 3C D7 D5 87 0A 10 81 22 BF 44 12 B8 C8 7B 1A D2 DC 94";
+//char shaFingerPrint[]="08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30";
+
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
 
 
@@ -61,7 +65,8 @@ const int output2 = 2;
 const int output_Boot = 16;
 const int output_Loop = 14;
 const int output_ServerHit = 12;
-char auth[] = "38640884a51245c8ad6ec9f0dcd44c8f";
+//char auth[] = "38640884a51245c8ad6ec9f0dcd44c8f";
+const char *auth= "";
 
 
 void setup()
@@ -85,27 +90,38 @@ void setup()
   
   if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
   Serial.begin(9600);
-  if(isSetupDebug==true){Serial.println("[LOC] Connecting to Wifi");}
   WiFiManager wifiManager;
   if(isResetWifiSettings){wifiManager.resetSettings();}
+  
   wifiManager.setDebugOutput(isSetupDebug);
+  WiFiManagerParameter custom_blynkauth_server("server", "Blynk Token", auth, 50);
+  wifiManager.addParameter(&custom_blynkauth_server);
   wifiManager.autoConnect(AccessPointName, AccessPointPassword);
+  auth = custom_blynkauth_server.getValue();
+  if(isSetupDebug==true){Serial.printf("[LOC] Auth token entered: %s\n", auth);}
+  Blynk.config(auth);  // in place of Blynk.begin(auth, ssid, pass);
+  Blynk.connect(10000);  // timeout set to 10 seconds and then continue without Blynk
+   
+  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
+  if(WiFi.status() != WL_CONNECTED && Blynk.connected() == false) {
+    if(isSetupDebug==true){Serial.println("[LOC] Blynk server not responding.Wrong Auth token."); // Token Failure . Erase token and Reboot }
+   }
   if(isSetupDebug==true){Serial.println("[LOC] Connected To Wifi");}
   boolean authenticated=false;
   while(authenticated==false)
   {
   if(isSetupDebug==true){Serial.println("[LOC] Attempting to authenticate and connect to server");}
   delay(1000); 
-   authenticated= ConnectToCloud();
+   authenticated=ConnectToCloud();
   }
   //DeviceServer.begin();
   digitalWrite(output_Boot, LOW);
-  Blynk.begin("38640884a51245c8ad6ec9f0dcd44c8f", "parjanya", "fireandblood");
+   
 }
-
+}
 boolean ConnectToCloud()
 {
   HTTPClient http;
