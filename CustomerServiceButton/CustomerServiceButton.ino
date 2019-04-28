@@ -8,8 +8,7 @@
 
 #include <ESP8266WiFi.h>
 
-boolean isSetupDebug=true;
-boolean isResetWifiSettings=true;
+
 
 
 // -------------------------------- AUTO CONNECT MANAGER DATA --------------------------------------------//
@@ -27,18 +26,29 @@ char shaFingerPrint[]="EF C6 00 66 2D 39 38 F8 D6 FD 80 81 63 90 43 CF 01 91 D4 
 
 WiFiServer DeviceServer(1025);
 
-const char *DeviceId= "82542347168123446895";
+
 
 int caseRegistered = 13;                // choose the pin for the LED
 int reportIssueButton = 2;               // choose the input pin (for PIR sensor)
 
 
+boolean isSetupDebug=true;
+
+const char *DeviceIdInput;
+boolean isResetWifiSettings=true;
+
+
+struct DeviceData {
+  boolean isResetWifiSettings=true;
+  const char *deviceId;
+};
 
 void setup()
 {
   Serial.begin(9600);
-  setDeviceData(true,123);
-  getDeviceId();
+  
+  struct DeviceData fetchedData=getDeviceData();
+  getDeviceData();
   pinMode(caseRegistered, OUTPUT);      // declare LED as output
   pinMode(reportIssueButton, INPUT);     // declare sensor as input
   Serial.println("");
@@ -48,11 +58,11 @@ void setup()
   if(isResetWifiSettings){wifiManager.resetSettings();}
   
  // wifiManager.setDebugOutput(isSetupDebug);
-  WiFiManagerParameter custom_device_id_hardware("server", "Device Id", DeviceId, 50);
+  WiFiManagerParameter custom_device_id_hardware("server", "Device Id", DeviceIdInput, 10);
   wifiManager.addParameter(&custom_device_id_hardware);
   wifiManager.autoConnect(AccessPointName, AccessPointPassword);
-  DeviceId = custom_device_id_hardware.getValue();
-  if(isSetupDebug==true){Serial.printf("[LOC] Device Key entered: %s\n", DeviceId);}
+  DeviceIdInput = custom_device_id_hardware.getValue();
+  if(isSetupDebug==true){Serial.printf("[LOC] Device Key entered: %s\n", DeviceIdInput);}
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   if(isSetupDebug==true){Serial.println("[LOC] Attempting to connect to wifi"); }
@@ -65,37 +75,30 @@ void setup()
   authenticated=ConnectToCloud();
   delay(1000); 
   }
-  setDeviceData(false,456);
-  getDeviceId();
+
+  DeviceData customVar ;
+  customVar.isResetWifiSettings=false;
+  customVar.deviceId=DeviceIdInput;
+  setDeviceData(customVar);
+  getDeviceData();
   //digitalWrite(output_Boot, LOW);
    
 }
 
-void setDeviceData(boolean isReset,int deviceId)
+void setDeviceData(struct DeviceData record)
 {
-  Serial.printf("\nEEPROM:: Write : isReset: %d deviceId: %d",isReset,deviceId);
+  Serial.printf("\nEEPROM:: PUT : isReset: %d deviceId: %s",record.isResetWifiSettings,record.deviceId);
   EEPROM.begin(512);
-  int eeAddress = 0;
-  EEPROM.put(eeAddress, isReset);
-  eeAddress += sizeof(boolean);
-  EEPROM.put(eeAddress, deviceId);
+  EEPROM.put(0, record);
   EEPROM.commit();
-  
 }
 
-void getDeviceId()
+struct DeviceData getDeviceData()
 {
-  boolean isReset;
-  int deviceId;
-  int eeAddress = 0; 
-  EEPROM.begin(512);
-  //while (!Serial) {
-  //  ; 
-  //}
-  EEPROM.get(eeAddress, isReset);
-  eeAddress += sizeof(boolean);
-  EEPROM.get(eeAddress, deviceId);
-  Serial.printf("\nEEPROM:: Read : isReset: %d deviceId: %d",isReset,deviceId);
+  struct DeviceData fetchedRecord;
+  EEPROM.get( 0, fetchedRecord );
+  Serial.printf("\nEEPROM:: GET : isReset: %d deviceId: %s",fetchedRecord.isResetWifiSettings,fetchedRecord.deviceId);
+  return fetchedRecord;
 }
 
 
@@ -106,7 +109,7 @@ boolean ConnectToCloud()
   char requestURLSF[150];
   
   // Logic to generate the master token
-  String dataToken = DeviceId;// First 20 characters will be the device Id , remaining will be the timestamp
+  String dataToken = DeviceIdInput;// First 20 characters will be the device Id , remaining will be the timestamp
   dataToken.replace("0","s");
   dataToken.replace("1","u");
   dataToken.replace("2","c");
