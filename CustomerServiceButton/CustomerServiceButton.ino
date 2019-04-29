@@ -27,11 +27,12 @@ char shaFingerPrint[]="EF C6 00 66 2D 39 38 F8 D6 FD 80 81 63 90 43 CF 01 91 D4 
 WiFiServer DeviceServer(1025);
 
 
-
-int caseRegistered = 13;                // choose the pin for the LED
-int reportIssueButton = 2;               // choose the input pin (for PIR sensor)
-
-
+int executingSetup= 4;
+int caseRegistered = 5;                // choose the pin for the LED
+int reportIssueButton = 16;               // choose the input pin (for PIR sensor)
+int temp =0;
+int address = 0;
+byte value;
 boolean isSetupDebug=true;
 
 const char *DeviceIdInput;
@@ -49,8 +50,10 @@ void setup()
   
   struct DeviceData fetchedData=getDeviceData();
   getDeviceData();
+  pinMode(executingSetup, OUTPUT);      // declare LED as output
   pinMode(caseRegistered, OUTPUT);      // declare LED as output
   pinMode(reportIssueButton, INPUT);     // declare sensor as input
+  digitalWrite(executingSetup, HIGH);
   Serial.println("");
   if(isSetupDebug==true){Serial.println("[LOC] Booting Node MCU ");}
   
@@ -82,6 +85,7 @@ void setup()
   setDeviceData(customVar);
   getDeviceData();
   //digitalWrite(output_Boot, LOW);
+  digitalWrite(executingSetup, LOW);
    
 }
 
@@ -145,7 +149,27 @@ boolean ConnectToCloud()
   delay(500);
   return true;
   }
+  int counter=0;
 void loop(){
+     temp = digitalRead(reportIssueButton);
+     if (temp == HIGH) {
+        Serial.println("Send Call To Register Case");
+        digitalWrite(caseRegistered, HIGH);
+        delay(3000);
+        digitalWrite(caseRegistered, LOW);
+       }
+
+       if(counter>=600)
+       {
+        Serial.println("Send PING to salesforce");
+        counter=0;
+       }
+       else
+       {
+        counter++;
+        delay(100);
+       }
+     
   //Serial.println("Loop starts");
     // if button pressed 
   //{
