@@ -20,6 +20,7 @@ char AccessPointPassword[] = "Home@1234";
 String server = "https://sandbox-parjanyaroy-developer-edition.cs58.force.com/services/apexrest/iotservice?deviceid="; //DIRECT SFDC CONNECT
 String serverURL =""; 
 char shaFingerPrint[]="EF C6 00 66 2D 39 38 F8 D6 FD 80 81 63 90 43 CF 01 91 D4 79";
+String deviceIdString="sku-000001";
 //char shaFingerPrint[]="08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30";
 
 // -------------------------------- AUTO CONNECT DEVICE ID --------------------------------------------//
@@ -57,6 +58,7 @@ void setup()
   wifiManager.addParameter(&custom_device_id_hardware);
   wifiManager.autoConnect(AccessPointName, AccessPointPassword);
   DeviceIdInput = custom_device_id_hardware.getValue();
+  deviceIdString=DeviceIdInput;
   if(isSetupDebug==true){Serial.printf("[setup] Device Key entered: %s\n", DeviceIdInput);}
   while (WiFi.status() != WL_CONNECTED) {
   delay(500);
@@ -77,9 +79,9 @@ boolean ConnectToCloud()
   HTTPClient http;
   char payload[400];
   char requestURLSF[150];
-  if(isSetupDebug==true){Serial.printf("[ConnectToCloud] DeviceIdInput ::%s\n",DeviceIdInput);}
-  if(isSetupDebug==true){Serial.print("[ConnectToCloud] Connecting To Server \n");}
-  serverURL=server+DeviceIdInput;
+  if(isSetupDebug==true){Serial.println("[ConnectToCloud] DeviceIdInput ::"+deviceIdString);}
+  if(isSetupDebug==true){Serial.print("\n[ConnectToCloud] Connecting To Server \n");}
+  serverURL=server+deviceIdString;
   serverURL.toCharArray(requestURLSF,serverURL.length()+1);
   if(isSetupDebug==true){Serial.printf("[LOC] Request URL  : %s\n", requestURLSF);}
   http.begin(requestURLSF,shaFingerPrint);
@@ -130,10 +132,10 @@ boolean pingCloud(char *message)
   HTTPClient http;
   char payload[400];
   char requestURLSF[150];
-  if(isSetupDebug==true){Serial.printf("[pingCloud] DeviceIdInput ::%s\n",DeviceIdInput);}
-  serverURL=server+DeviceIdInput+"&process="+message;
+  if(isSetupDebug==true){Serial.println("[pingCloud] DeviceIdInput ::"+deviceIdString);}
+  serverURL=server+deviceIdString+"&process="+message;
   serverURL.toCharArray(requestURLSF,serverURL.length()+1);
-  if(isSetupDebug==true){Serial.printf("[pingCloud] Request URL  : %s\n", requestURLSF);}
+  if(isSetupDebug==true){Serial.printf("\n[pingCloud] Request URL  : %s\n", requestURLSF);}
   http.begin(requestURLSF,shaFingerPrint);
   int httpCode = http.GET();
   if (httpCode > 0) {
